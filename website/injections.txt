@@ -1,0 +1,4 @@
+  status:true, monitor:true,
+  feedback:true,
+  chat:true
+};
