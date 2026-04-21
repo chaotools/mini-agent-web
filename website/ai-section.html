@@ -1,0 +1,46 @@
+<!-- ======== SECTION: AI 工具 ======== -->
+  <div class="section-header">
+    <span class="section-title">// AI 工具</span>
+    <div class="section-line"></div>
+  </div>
+  <div class="category">
+    <div class="category-title">智能助手</div>
+    <div class="tool-grid">
+
+      <div class="tool-card" onclick="openModal('chat')">
+        <div class="tool-card-top">
+          <div class="tool-icon" style="background:rgba(0,255,157,0.1);">🤖</div>
+          <span class="tool-status online">可用</span>
+        </div>
+        <div class="tool-name">AI Chat</div>
+        <div class="tool-desc">Mini-Agent 智能助手，支持文件操作、代码编写、数据处理等任务。</div>
+        <div class="tool-tags"><span class="tool-tag">AI</span><span class="tool-tag">助手</span></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======== FOOTER ======== -->
+  <footer class="footer">
+    <div class="footer-main">
+      <span>CHAOTOOLS HUB</span> · <span>v2.0.0</span> · <span>由 我的AI工具 提供技术支持</span> · <span>2026</span>
+      <span class="footer-heart">♥</span>
+    </div>
+    <div class="footer-beian" style="display:flex;justify-content:center;align-items:center;gap:28px;">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer" 
+         style="display:inline-flex;align-items:center;line-height:18px;">鲁ICP备2026016959号-1</a>
+      <span style="display:inline-flex;align-items:center;gap:5px;line-height:18px;">
+        <img src="/ghs.png" alt="" style="width:18px;height:auto;display:block;">
+        <a href="https://beian.mps.gov.cn/#/query/webSearch?code=37082902370900" target="_blank" rel="noopener noreferrer"
+           style="color:var(--text-dim);text-decoration:none;">鲁公网安备37082902370900号</a>
+      </span>
+    </div>
+  </footer>
+
+</div><!-- /.container -->
+
+<!-- ======== MODAL (弹窗容器 - 关键！之前缺失的) ======== -->
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><span class="emoji">🔧</spa
