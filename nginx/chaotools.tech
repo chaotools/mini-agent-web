@@ -1,0 +1,61 @@
+server {
+    server_name chaotools.tech www.chaotools.tech;
+
+    root /var/www/html;
+    index index.html index.htm;
+
+    # 安全头（全局）
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # 静态资源缓存（放在location /之前）
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+        try_files $uri =404;
+    }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    # Feedback API proxy
+    location /api/ {
+        proxy_pass http://127.0.0.1:8999;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Mini-Agent AI Chat proxy
+    location /mini-agent/ {
+        proxy_pass http://127.0.0.1:8899/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 75s;
+    }
+
+    listen [::]:443 ssl ipv6only=on;
+    listen 443 ssl;
+    ssl_certificate /etc/letsencrypt/live/chaotools.tech/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/chaotools.tech/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+}
+server {
+    if ($host = www.chaotools.tech) {
+        return 301 https://$host$request_uri;
+    }
+    if ($host = chaotools.tech) {
+        return 301 https://$host$request_uri;
+    }
+    listen 80;
+    listen [::]:80;
+    server_name chaotools.tech www.chaotools.tech;
+    return 404;
+}
