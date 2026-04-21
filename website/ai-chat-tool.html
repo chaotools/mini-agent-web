@@ -1,0 +1,198 @@
+<!-- ====================== TOOL: AI CHAT ========================= -->
+<!-- ================================================================ -->
+<style>
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 520px;
+  max-height: 70vh;
+  min-height: 320px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,255,157,0.2) transparent;
+}
+.chat-msg {
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 90%;
+  word-break: break-word;
+}
+.chat-msg-user {
+  background: rgba(0,255,157,0.12);
+  border: 1px solid rgba(0,255,157,0.2);
+  color: var(--text);
+  align-self: flex-end;
+  border-bottom-right-radius: 2px;
+}
+.chat-msg-assistant {
+  background: var(--surface2);
+  border: 1px solid var(--border-default);
+  color: var(--text);
+  align-self: flex-start;
+  border-bottom-left-radius: 2px;
+}
+.chat-msg-assistant strong { color: var(--cyan); }
+.chat-inline-code {
+  background: rgba(0,0,0,0.4);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #ff9;
+}
+.chat-code {
+  background: rgba(0,0,0,0.5);
+  padding: 8px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #0f0;
+  white-space: pre-wrap;
+  margin-top: 6px;
+  overflow-x: auto;
+}
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 8px 4px;
+  border-top: 1px solid var(--border-subtle);
+  align-items: flex-end;
+}
+.chat-input {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  padding: 8px 12px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  min-height: 38px;
+  max-height: 120px;
+  transition: border-color 0.2s;
+  line-height: 1.5;
+}
+.chat-input:focus { border-color: var(--cyan); }
+.chat-input::placeholder { color: var(--text-dim); }
+.chat-send-btn {
+  background: var(--cyan);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-send-btn:hover { opacity: 0.85; }
+.chat-thinking {
+  padding: 4px 12px 6px;
+  color: var(--text-dim);
+  font-size: 12px;
+}
+.thinking-dots { color: var(--cyan); }
+#thinking-text { margin-left: 4px; color: var(--text-dim); }
+</style>
+
+<script>
+modalContent.chat = '<div class="chat-container" id="chat-container">' +
+  '<div class="chat-messages" id="chat-messages"></div>' +
+  '<div class="chat-input-row">' +
+    '<textarea class="chat-input" id="chat-input" placeholder="输入消息... (Shift+Enter换行, Enter发送)" rows="1"></textarea>' +
+    '<button class="chat-send-btn" id="chat-send-btn" onclick="chatSend()">&#9654;</button>' +
+  '</div>' +
+  '<div class="chat-thinking" id="chat-thinking" style="display:none;">' +
+    '<span class="thinking-dots">思考中<span id="thinking-text"></span></span>' +
+  '</div>' +
+'</div>';
+
+let _chatSessionId = null;
+let _chatLoading = false;
+
+function _chatAppend(role, content) {
+  const box = document.getElementById('chat-messages');
+  if (!box) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-' + role;
+  content = content.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  content = content.replace(/```([\s\S]*?)```/g, '<pre class="chat-code">$1<\/pre>');
+  content = content.replace(/`([^`]+)`/g, '<code class="chat-inline-code">$1<\/code>');
+  content = content.replace(/\*\*([^*]+)\*\*/g, '<strong>$1<\/strong>');
+  content = content.replace(/\n/g, '<br>');
+  div.innerHTML = content;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+async function chatSend() {
+  if (_chatLoading) return;
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  const msg = input.value.trim();
+  if (!msg) return;
+  _chatAppend('user', msg);
+  input.value = '';
+  _chatLoading = true;
+  const btn = document.getElementById('chat-send-btn');
+  if (btn) btn.style.opacity = '0.4';
+  const thinking = document.getElementById('chat-thinking');
+  if (thinking) thinking.style.display = 'flex';
+
+  try {
+    const body = { message: msg };
+    if (_chatSessionId) body.session_id = _chatSessionId;
+    const res = await fetch('/mini-agent/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    _chatSessionId = data.session_id;
+    if (data.thinking) {
+      _chatAppend('assistant', '&#128588; ' + data.thinking);
+    }
+    if (data.response) {
+      _chatAppend('assistant', data.response);
+    }
+    if (data.tool_calls && data.tool_calls.length > 0) {
+      let tc = '&#128737; **Tool Calls (' + data.tool_calls.length + '):**\n';
+      data.tool_calls.forEach(function(t) {
+        tc += '&#8226; ' + t.name + ' &#8594; ' + (t.success ? '&#9989;' : '&#10060;') + ' ' + t.result.slice(0,100) + '\n';
+      });
+      _chatAppend('assistant', tc);
+    }
+  } catch(e) {
+    _chatAppend('assistant', '&#10060; 请求失败: ' + e.message);
+  } finally {
+    _chatLoading = false;
+    const btn2 = document.getElementById('chat-send-btn');
+    if (btn2) btn2.style.opacity = '1';
+    const thinking2 = document.getElementById('chat-thinking');
+    if (thinking2) thinking2.style.display = 'none';
+  }
+}
+
+document.addEventListener('keydown', function(e) {
+  const input = document.getElementById('chat-input');
+  if (e.target === input && e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    chatSend();
+  }
+});
+</script>
