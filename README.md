@@ -1,15 +1,15 @@
 # mini-agent-web
 
-Mini-Agent HTTP API Service + Web Chat UI，配套 chaotools.tech 网站集成方案。
+Mini-Agent HTTP API Service + Web Chat UI，配套网站集成方案。
 
 ## 架构
 
 ```
-网站(chaotools.tech/chat) 
+网站(你的域名/chat) 
     ↓ HTTPS
 Nginx (/mini-agent/ 代理)
     ↓
-FastAPI 服务 (localhost:8899)
+FastAPI 服务 (localhost:<YOUR_MINI_AGENT_PORT>)
     ↓ 内部调用
 Mini-Agent (Agent 类 + LLMClient)
     ↓
@@ -25,7 +25,7 @@ mini-agent-web/
 │   ├── config-example.yaml # 配置文件示例
 │   └── system_prompt.md    # 系统提示词
 ├── nginx/
-│   └── chaotools.tech      # Nginx 站点配置（含 /mini-agent/ 代理）
+│   └── your-site.com       # Nginx 站点配置（将 your-domain.com 替换为你的域名）
 ├── website/
 │   ├── ai-section.html     # 网站新增的「AI 工具」分区 HTML
 │   ├── ai-chat-tool.html   # AI Chat 工具卡片 + Modal HTML/CSS/JS
@@ -55,9 +55,11 @@ python server.py
 ### 3. Nginx 配置
 
 ```bash
-# 将 nginx/chaotools.tech 复制到你的 Nginx 配置目录
-sudo cp nginx/chaotools.tech /etc/nginx/sites-available/your-site.com
-sudo ln -s /etc/nginx/sites-available/your-site.com /etc/nginx/sites-enabled/
+# 1. 将 nginx/your-site.com 复制到 Nginx 配置目录
+# 2. 替换文件中的 your-domain.com 为你的真实域名
+# 3. 替换 <YOUR_FEEDBACK_API_PORT> 和 <YOUR_MINI_AGENT_PORT> 为实际端口
+sudo cp nginx/your-site.com /etc/nginx/sites-available/your-domain.com
+sudo ln -s /etc/nginx/sites-available/your-domain.com /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```
 
